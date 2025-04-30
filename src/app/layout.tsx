@@ -1,23 +1,27 @@
 'use client';
 
 import './globals.css';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import rtlPlugin from 'stylis-plugin-rtl';
-import { CacheProvider } from '@emotion/react';
-import createCache from '@emotion/cache';
-import { prefixer } from 'stylis';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
+import { Inter } from 'next/font/google';
 
-const cacheRtl = createCache({
-  key: 'muirtl',
-  stylisPlugins: [prefixer, rtlPlugin],
-});
+const inter = Inter({ subsets: ['latin'] });
 
+// Create theme with RTL direction
 const theme = createTheme({
   direction: 'rtl',
-  typography: {
-    fontFamily: 'Vazirmatn, sans-serif',
+  palette: {
+    primary: {
+      main: 'rgb(234 179 8)',
+    },
   },
 });
+
+export const metadata = {
+  title: 'Hobab Sekeh',
+  description: 'Gold and Coin Conversion Calculator',
+};
 
 export default function RootLayout({
   children,
@@ -34,10 +38,13 @@ export default function RootLayout({
           type="text/css"
         />
       </head>
-      <body>
-        <CacheProvider value={cacheRtl}>
-          <ThemeProvider theme={theme}>{children}</ThemeProvider>
-        </CacheProvider>
+      <body className={inter.className}>
+        <AppRouterCacheProvider options={{ key: 'css', prepend: true }}>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            {children}
+          </ThemeProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );
