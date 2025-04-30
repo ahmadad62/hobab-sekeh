@@ -1,27 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  TextField,
-  Typography,
-  Box,
-  InputAdornment,
-  Paper,
-  Tabs,
-  Tab,
-} from '@mui/material';
-import {
-  AttachMoney as MoneyIcon,
-  LocalOffer as PriceTagIcon,
-  Scale as ScaleIcon,
-  CompareArrows as ConvertIcon,
-  TrendingUp as BubbleIcon,
-  Info as InfoIcon,
-  Sell as SellIcon,
-  ShoppingCart as BuyIcon,
-} from '@mui/icons-material';
 
 const formatNumber = (value: string) => {
   // Remove all non-digit characters
@@ -150,423 +129,296 @@ const ConversionCalculator = () => {
   const totalGoldValue = sekehResult !== null ? sekehResult.totalGoldValue : 0;
 
   return (
-    <Card 
-      sx={{ 
-        maxWidth: 600, 
-        mx: 'auto', 
-        mt: 4,
-        boxShadow: '0 8px 32px rgba(234, 179, 8, 0.1)',
-        borderRadius: '16px',
-        transition: 'all 0.3s ease-in-out',
-        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(18, 18, 18, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-        border: '1px solid rgba(234, 179, 8, 0.1)',
-        backdropFilter: 'blur(10px)',
-        '&:hover': {
-          boxShadow: '0 12px 40px rgba(234, 179, 8, 0.15)',
-        }
-      }}
-    >
-      <CardContent sx={{ p: 4 }}>
-        <Typography 
-          variant="h4" 
-          component="h1" 
-          align="center" 
-          gutterBottom
-          sx={{
-            color: 'rgb(234 179 8)',
-            fontWeight: 800,
-            mb: 4,
-            textShadow: '2px 2px 4px rgba(234, 179, 8, 0.2)',
-            letterSpacing: '-0.5px',
-            background: (theme) => theme.palette.mode === 'dark' 
-              ? 'linear-gradient(45deg, #EAB308, #FCD34D)'
-              : 'linear-gradient(45deg, #EAB308, #FCD34D)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          تبدیل سکه به طلا و برعکس
-        </Typography>
-        
-        <Box 
-          sx={{ 
-            borderBottom: 1, 
-            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 179, 8, 0.2)' : 'divider', 
-            mb: 4,
-            '& .MuiTabs-indicator': {
-              background: (theme) => theme.palette.mode === 'dark' 
-                ? 'linear-gradient(45deg, #EAB308, #FCD34D)'
-                : 'linear-gradient(45deg, #EAB308, #FCD34D)',
-              height: 4,
-              borderRadius: '2px'
-            }
-          }}
-        >
-          <Tabs 
-            value={activeTab} 
-            onChange={(e, newValue) => setActiveTab(newValue)} 
-            centered
-            sx={{
-              '& .MuiTab-root': {
-                color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
-                transition: 'all 0.3s ease',
-                fontSize: '1rem',
-                fontWeight: 500,
-                py: 2,
-                px: 3,
-                '&.Mui-selected': {
-                  color: 'rgb(234 179 8)',
-                  fontWeight: 700,
-                }
-              }
-            }}
+    <div className="max-w-2xl mx-auto mt-8 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-yellow-200/10 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
+      <h1 className="text-4xl font-bold text-center mb-8 text-yellow-500 bg-gradient-to-r from-yellow-500 to-yellow-300 bg-clip-text text-transparent">
+        تبدیل سکه به طلا و برعکس
+      </h1>
+      
+      <div className="border-b border-gray-200 dark:border-gray-700 mb-8">
+        <div className="flex justify-center space-x-4">
+          <button
+            onClick={() => setActiveTab('sekeh')}
+            className={`px-6 py-4 text-lg font-medium transition-colors duration-200 ${
+              activeTab === 'sekeh'
+                ? 'text-yellow-500 border-b-2 border-yellow-500'
+                : 'text-gray-500 dark:text-gray-400 hover:text-yellow-500'
+            }`}
           >
-            <Tab 
-              label="تبدیل سکه به مقدار طلای معادل" 
-              value="sekeh" 
-            />
-            <Tab 
-              label="تبدیل طلا به تعداد سکه معادل" 
-              value="gold" 
-            />
-          </Tabs>
-        </Box>
+            تبدیل سکه به مقدار طلای معادل
+          </button>
+          <button
+            onClick={() => setActiveTab('gold')}
+            className={`px-6 py-4 text-lg font-medium transition-colors duration-200 ${
+              activeTab === 'gold'
+                ? 'text-yellow-500 border-b-2 border-yellow-500'
+                : 'text-gray-500 dark:text-gray-400 hover:text-yellow-500'
+            }`}
+          >
+            تبدیل طلا به تعداد سکه معادل
+          </button>
+        </div>
+      </div>
 
-        <Box 
-          sx={{ 
-            mt: 3, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 3,
-            '& .MuiTextField-root': {
-              '& .MuiOutlinedInput-root': {
-                transition: 'all 0.3s ease',
-                borderRadius: '12px',
-                backgroundColor: (theme) => theme.palette.mode === 'dark' 
-                  ? 'rgba(255, 255, 255, 0.05)'
-                  : 'rgba(234, 179, 8, 0.05)',
-                '&:hover': {
-                  backgroundColor: (theme) => theme.palette.mode === 'dark' 
-                    ? 'rgba(255, 255, 255, 0.08)'
-                    : 'rgba(234, 179, 8, 0.08)',
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'rgb(234 179 8)',
-                    borderWidth: 2,
-                  }
-                },
-                '&.Mui-focused': {
-                  backgroundColor: (theme) => theme.palette.mode === 'dark' 
-                    ? 'rgba(255, 255, 255, 0.1)'
-                    : 'rgba(234, 179, 8, 0.1)',
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'rgb(234 179 8)',
-                    borderWidth: 2,
-                  }
-                }
-              },
-              '& .MuiInputLabel-root': {
-                fontSize: '0.95rem',
-                '&.Mui-focused': {
-                  color: 'rgb(234 179 8)',
-                }
-              },
-              '& .MuiInputBase-input': {
-                fontSize: '1rem',
-                py: 1.5,
-                color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : 'text.primary',
-              },
-              '& .MuiInputAdornment-root': {
-                '& .MuiTypography-root': {
-                  fontSize: '0.95rem',
-                  color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
-                }
-              },
-              '& .MuiFormHelperText-root': {
-                color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'text.secondary',
-              }
-            }
-          }}
-        >
-          {activeTab === 'sekeh' ? (
-            <>
-              <TextField
-                fullWidth
-                label="قیمت فروش سکه امامی"
-                value={sekehPrice}
-                onChange={(e) => handlePriceChange(e.target.value, setSekehPrice)}
-                type="text"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SellIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: <InputAdornment position="end">تومان</InputAdornment>,
-                }}
-                helperText="قیمت فروش یک عدد سکه تمام بهار آزادی طرح امامی"
-              />
-              <TextField
-                fullWidth
-                label="قیمت خرید طلای ۱۷ عیار"
-                value={goldPrice}
-                onChange={(e) => handlePriceChange(e.target.value, setGoldPrice)}
-                type="text"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <BuyIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: <InputAdornment position="end">تومان</InputAdornment>,
-                }}
-                helperText="قیمت مظنه طلای ۱۷ عیار در بازار (قیمت خرید)"
-              />
-              <TextField
-                fullWidth
-                label="تعداد سکه‌های شما"
-                value={sekehCount}
-                onChange={(e) => setSekehCount(e.target.value)}
-                type="number"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <ScaleIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: <InputAdornment position="end">عدد</InputAdornment>,
-                }}
-                helperText="تعداد سکه‌هایی که می‌خواهید بفروشید و معادل طلای آن را بدانید"
-              />
-            </>
-          ) : (
-            <>
-              <TextField
-                fullWidth
-                label="قیمت خرید سکه امامی"
-                value={sekehPrice}
-                onChange={(e) => handlePriceChange(e.target.value, setSekehPrice)}
-                type="text"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <BuyIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: <InputAdornment position="end">تومان</InputAdornment>,
-                }}
-                helperText="قیمت خرید یک عدد سکه تمام بهار آزادی طرح امامی"
-              />
-              <TextField
-                fullWidth
-                label="قیمت فروش طلای ۱۷ عیار"
-                value={goldPrice}
-                onChange={(e) => handlePriceChange(e.target.value, setGoldPrice)}
-                type="text"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SellIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: <InputAdornment position="end">تومان</InputAdornment>,
-                }}
-                helperText="قیمت مظنه طلای ۱۷ عیار در بازار (قیمت فروش)"
-              />
-              <TextField
-                fullWidth
-                label="مقدار طلای شما"
-                value={goldGrams}
-                onChange={(e) => setGoldGrams(e.target.value)}
-                type="number"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <ScaleIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: <InputAdornment position="end">گرم</InputAdornment>,
-                }}
-                helperText="مقدار طلای ۱۸ عیاری که می‌خواهید بفروشید و معادل سکه آن را بدانید"
-              />
-            </>
-          )}
+      <div className="space-y-6">
+        {activeTab === 'sekeh' ? (
+          <>
+            <div className="space-y-4">
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  قیمت فروش سکه امامی
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={sekehPrice}
+                    onChange={(e) => handlePriceChange(e.target.value, setSekehPrice)}
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
+                    placeholder="قیمت سکه را وارد کنید"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                    تومان
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  قیمت فروش یک عدد سکه تمام بهار آزادی طرح امامی
+                </p>
+              </div>
 
-          {activeTab === 'sekeh' && result !== null && premiumInfo && (
-            <Paper 
-              elevation={0} 
-              sx={{ 
-                p: 4, 
-                bgcolor: (theme) => theme.palette.mode === 'dark' 
-                  ? 'rgba(18, 18, 18, 0.8)'
-                  : 'rgba(255, 255, 255, 0.8)',
-                borderRadius: '16px',
-                border: '1px solid',
-                borderColor: 'rgba(234, 179, 8, 0.2)',
-                transition: 'all 0.3s ease',
-                backdropFilter: 'blur(10px)',
-                '&:hover': {
-                  boxShadow: '0 8px 24px rgba(234, 179, 8, 0.1)',
-                }
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <ConvertIcon sx={{ 
-                  color: 'rgb(234 179 8)', 
-                  fontSize: '2rem', 
-                  mr: 2,
-                  background: (theme) => theme.palette.mode === 'dark' 
-                    ? 'linear-gradient(45deg, #EAB308, #FCD34D)'
-                    : 'linear-gradient(45deg, #EAB308, #FCD34D)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }} />
-                <Typography variant="h5" gutterBottom sx={{ 
-                  color: 'rgb(234 179 8)', 
-                  fontWeight: 700,
-                  background: (theme) => theme.palette.mode === 'dark' 
-                    ? 'linear-gradient(45deg, #EAB308, #FCD34D)'
-                    : 'linear-gradient(45deg, #EAB308, #FCD34D)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}>
-                  نتیجه تبدیل سکه به طلا:
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <PriceTagIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  قیمت خرید طلای ۱۷ عیار
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={goldPrice}
+                    onChange={(e) => handlePriceChange(e.target.value, setGoldPrice)}
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
+                    placeholder="قیمت طلا را وارد کنید"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                    تومان
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  قیمت مظنه طلای ۱۷ عیار در بازار (قیمت خرید)
+                </p>
+              </div>
+
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  تعداد سکه‌های شما
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={sekehCount}
+                    onChange={(e) => setSekehCount(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
+                    placeholder="تعداد سکه را وارد کنید"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                    عدد
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  تعداد سکه‌هایی که می‌خواهید بفروشید و معادل طلای آن را بدانید
+                </p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="space-y-4">
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  قیمت خرید سکه امامی
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={sekehPrice}
+                    onChange={(e) => handlePriceChange(e.target.value, setSekehPrice)}
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
+                    placeholder="قیمت سکه را وارد کنید"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                    تومان
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  قیمت خرید یک عدد سکه تمام بهار آزادی طرح امامی
+                </p>
+              </div>
+
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  قیمت فروش طلای ۱۷ عیار
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={goldPrice}
+                    onChange={(e) => handlePriceChange(e.target.value, setGoldPrice)}
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
+                    placeholder="قیمت طلا را وارد کنید"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                    تومان
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  قیمت مظنه طلای ۱۷ عیار در بازار (قیمت فروش)
+                </p>
+              </div>
+
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  مقدار طلای شما
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={goldGrams}
+                    onChange={(e) => setGoldGrams(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
+                    placeholder="مقدار طلا را وارد کنید"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                    گرم
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  مقدار طلای ۱۸ عیاری که می‌خواهید بفروشید و معادل سکه آن را بدانید
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'sekeh' && result !== null && premiumInfo && (
+          <div className="mt-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-yellow-200/20">
+            <div className="flex items-center mb-6">
+              <h2 className="text-2xl font-bold text-yellow-500 bg-gradient-to-r from-yellow-500 to-yellow-300 bg-clip-text text-transparent">
+                نتیجه تبدیل سکه به طلا:
+              </h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <p className="text-gray-700 dark:text-gray-300">
                   قیمت طلای ۱۸ عیار:{' '}
-                  <strong style={{ color: 'rgb(234 179 8)', fontSize: '1.2rem' }}>{premiumInfo.eighteenKaratPrice.toLocaleString('fa-IR')} تومان</strong>
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <MoneyIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+                  <span className="font-bold text-yellow-500">
+                    {premiumInfo.eighteenKaratPrice.toLocaleString('fa-IR')} تومان
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="text-gray-700 dark:text-gray-300">
                   با فروش {sekehCount} سکه به ارزش{' '}
-                  <strong style={{ color: 'rgb(234 179 8)', fontSize: '1.2rem' }}>{totalValue.toLocaleString('fa-IR')} تومان</strong>
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <ScaleIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+                  <span className="font-bold text-yellow-500">
+                    {totalValue.toLocaleString('fa-IR')} تومان
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="text-gray-700 dark:text-gray-300">
                   می‌توانید{' '}
-                  <strong style={{ color: 'rgb(234 179 8)', fontSize: '1.2rem' }}>{(premiumInfo.goldGramsPerSekeh * parseFloat(sekehCount)).toFixed(3)} گرم</strong> طلای ۱۸ عیار خریداری کنید
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <InfoIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+                  <span className="font-bold text-yellow-500">
+                    {(premiumInfo.goldGramsPerSekeh * parseFloat(sekehCount)).toFixed(3)} گرم
+                  </span> طلای ۱۸ عیار خریداری کنید
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="text-gray-700 dark:text-gray-300">
                   وزن طلای هر سکه:{' '}
-                  <strong style={{ color: 'rgb(234 179 8)', fontSize: '1.2rem' }}>{premiumInfo.goldWeight.toFixed(3)} گرم</strong> (عیار ۱۸)
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <BubbleIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+                  <span className="font-bold text-yellow-500">
+                    {premiumInfo.goldWeight.toFixed(3)} گرم
+                  </span> (عیار ۱۸)
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="text-gray-700 dark:text-gray-300">
                   حباب هر سکه:{' '}
-                  <strong style={{ color: 'rgb(234 179 8)', fontSize: '1.2rem' }}>{premiumInfo.premium.toLocaleString('fa-IR')} تومان</strong>
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <BubbleIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }} color={premiumInfo.premiumPercentage > 0 ? 'error' : 'success'}>
+                  <span className="font-bold text-yellow-500">
+                    {premiumInfo.premium.toLocaleString('fa-IR')} تومان
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className={`text-gray-700 dark:text-gray-300 ${premiumInfo.premiumPercentage > 0 ? 'text-red-500' : 'text-green-500'}`}>
                   درصد حباب:{' '}
-                  <strong style={{ fontSize: '1.2rem' }}>{Math.abs(premiumInfo.premiumPercentage).toFixed(2)}%</strong>
+                  <span className="font-bold">
+                    {Math.abs(premiumInfo.premiumPercentage).toFixed(2)}%
+                  </span>
                   {premiumInfo.premiumPercentage > 0 ? ' مثبت' : ' منفی'}
-                </Typography>
-              </Box>
-            </Paper>
-          )}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
-          {activeTab === 'gold' && sekehResult !== null && premiumInfo && (
-            <Paper 
-              elevation={0} 
-              sx={{ 
-                p: 4, 
-                bgcolor: (theme) => theme.palette.mode === 'dark' 
-                  ? 'rgba(18, 18, 18, 0.8)'
-                  : 'rgba(255, 255, 255, 0.8)',
-                borderRadius: '16px',
-                border: '1px solid',
-                borderColor: 'rgba(234, 179, 8, 0.2)',
-                transition: 'all 0.3s ease',
-                backdropFilter: 'blur(10px)',
-                '&:hover': {
-                  boxShadow: '0 8px 24px rgba(234, 179, 8, 0.1)',
-                }
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <ConvertIcon sx={{ 
-                  color: 'rgb(234 179 8)', 
-                  fontSize: '2rem', 
-                  mr: 2,
-                  background: (theme) => theme.palette.mode === 'dark' 
-                    ? 'linear-gradient(45deg, #EAB308, #FCD34D)'
-                    : 'linear-gradient(45deg, #EAB308, #FCD34D)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }} />
-                <Typography variant="h5" gutterBottom sx={{ 
-                  color: 'rgb(234 179 8)', 
-                  fontWeight: 700,
-                  background: (theme) => theme.palette.mode === 'dark' 
-                    ? 'linear-gradient(45deg, #EAB308, #FCD34D)'
-                    : 'linear-gradient(45deg, #EAB308, #FCD34D)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}>
-                  نتیجه تبدیل طلا به سکه:
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <PriceTagIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+        {activeTab === 'gold' && sekehResult !== null && premiumInfo && (
+          <div className="mt-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-yellow-200/20">
+            <div className="flex items-center mb-6">
+              <h2 className="text-2xl font-bold text-yellow-500 bg-gradient-to-r from-yellow-500 to-yellow-300 bg-clip-text text-transparent">
+                نتیجه تبدیل طلا به سکه:
+              </h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <p className="text-gray-700 dark:text-gray-300">
                   قیمت طلای ۱۸ عیار:{' '}
-                  <strong style={{ color: 'rgb(234 179 8)', fontSize: '1.2rem' }}>{sekehResult.eighteenKaratPrice.toLocaleString('fa-IR')} تومان</strong>
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <MoneyIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+                  <span className="font-bold text-yellow-500">
+                    {sekehResult.eighteenKaratPrice.toLocaleString('fa-IR')} تومان
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="text-gray-700 dark:text-gray-300">
                   با فروش {goldGrams} گرم طلای ۱۸ عیار به ارزش{' '}
-                  <strong style={{ color: 'rgb(234 179 8)', fontSize: '1.2rem' }}>{totalGoldValue.toLocaleString('fa-IR')} تومان</strong>
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <ScaleIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+                  <span className="font-bold text-yellow-500">
+                    {totalGoldValue.toLocaleString('fa-IR')} تومان
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="text-gray-700 dark:text-gray-300">
                   می‌توانید{' '}
-                  <strong style={{ color: 'rgb(234 179 8)', fontSize: '1.2rem' }}>{sekehResult.sekehCount.toFixed(3)} سکه</strong> خریداری کنید
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <InfoIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+                  <span className="font-bold text-yellow-500">
+                    {sekehResult.sekehCount.toFixed(3)} سکه
+                  </span> خریداری کنید
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="text-gray-700 dark:text-gray-300">
                   وزن طلای هر سکه:{' '}
-                  <strong style={{ color: 'rgb(234 179 8)', fontSize: '1.2rem' }}>{sekehResult.goldWeightPerSekeh.toFixed(3)} گرم</strong> (عیار ۱۸)
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <BubbleIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+                  <span className="font-bold text-yellow-500">
+                    {sekehResult.goldWeightPerSekeh.toFixed(3)} گرم
+                  </span> (عیار ۱۸)
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className="text-gray-700 dark:text-gray-300">
                   حباب هر سکه:{' '}
-                  <strong style={{ color: 'rgb(234 179 8)', fontSize: '1.2rem' }}>{(parseFormattedNumber(sekehPrice) - (sekehResult.goldWeightPerSekeh * sekehResult.eighteenKaratPrice)).toLocaleString('fa-IR')} تومان</strong>
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <BubbleIcon sx={{ color: 'rgb(234 179 8)', fontSize: '1.5rem', mr: 2 }} />
-                <Typography variant="body1" sx={{ fontSize: '1.1rem' }} color={premiumInfo.premiumPercentage > 0 ? 'error' : 'success'}>
+                  <span className="font-bold text-yellow-500">
+                    {(parseFormattedNumber(sekehPrice) - (sekehResult.goldWeightPerSekeh * sekehResult.eighteenKaratPrice)).toLocaleString('fa-IR')} تومان
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center">
+                <p className={`text-gray-700 dark:text-gray-300 ${premiumInfo.premiumPercentage > 0 ? 'text-red-500' : 'text-green-500'}`}>
                   درصد حباب:{' '}
-                  <strong style={{ fontSize: '1.2rem' }}>{Math.abs(((parseFormattedNumber(sekehPrice) - (sekehResult.goldWeightPerSekeh * sekehResult.eighteenKaratPrice)) / (sekehResult.goldWeightPerSekeh * sekehResult.eighteenKaratPrice) * 100)).toFixed(2)}%</strong>
+                  <span className="font-bold">
+                    {Math.abs(((parseFormattedNumber(sekehPrice) - (sekehResult.goldWeightPerSekeh * sekehResult.eighteenKaratPrice)) / (sekehResult.goldWeightPerSekeh * sekehResult.eighteenKaratPrice) * 100)).toFixed(2)}%
+                  </span>
                   {premiumInfo.premiumPercentage > 0 ? ' مثبت' : ' منفی'}
-                </Typography>
-              </Box>
-            </Paper>
-          )}
-        </Box>
-      </CardContent>
-    </Card>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
