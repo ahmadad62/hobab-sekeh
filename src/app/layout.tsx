@@ -1,22 +1,8 @@
-'use client';
-
 import './globals.css';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
 import { Inter } from 'next/font/google';
+import Providers from '@/components/Providers';
 
 const inter = Inter({ subsets: ['latin'] });
-
-// Create theme with RTL direction
-const theme = createTheme({
-  direction: 'rtl',
-  palette: {
-    primary: {
-      main: 'rgb(234 179 8)',
-    },
-  },
-});
 
 export const metadata = {
   title: 'Hobab Sekeh',
@@ -39,12 +25,9 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <AppRouterCacheProvider options={{ key: 'css', prepend: true }}>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            {children}
-          </ThemeProvider>
-        </AppRouterCacheProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
