@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 @layer base {
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
   :root {
-    --background: #ffffff;
-    --foreground: #171717;
+    --background: #0a0a0a;
+    --foreground: #ededed;
   }
+}
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: #0a0a0a;
-      --foreground: #ededed;
-    }
-  }
-
-  body {
+body {
     @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100;
   }
 
