@@ -17,7 +17,7 @@ export default function RootLayout({
       <head>
         <title>تبدیل سکه و طلا</title>
       </head>
-      <body>
+      <body >
         <Providers>
             {children}
         </Providers>
