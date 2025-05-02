@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 
+// 1. Type Definitions
 interface PurchaseRecord {
+  id: string;
   date: string;
   price: number;
   count: number;
@@ -10,230 +12,238 @@ interface PurchaseRecord {
   type: 'coin' | 'gold';
   goldGrams?: number;
   equivalentCoins?: number;
+  premium?: number;
+  premiumPercentage?: number;
 }
 
-const STORAGE_KEY = 'hobab-sekeh-history';
+interface CalculationResult {
+  value: number;
+  premium?: number;
+  premiumPercentage?: number;
+  equivalent?: number;
+  isProfitable?: boolean;
+}
 
-const formatNumber = (value: string) => {
-  const numbers = value.replace(/\D/g, '');
-  return numbers.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+interface InputValues {
+  sekehPrice: string;
+  goldPrice: string;
+  sekehCount: string;
+  goldGrams: string;
+}
+
+// 2. Constants
+const STORAGE_KEY = 'hobab-sekeh-history';
+const SEKAH_WEIGHT = 8.133; // grams
+const SEKAH_KARAT = 900; // 22k
+const TARGET_KARAT = 750; // 18k
+const EIGHTEEN_KARAT_FACTOR = 4.3318;
+
+// 3. Utility Functions
+const formatCurrency = (value: number): string => {
+  return value.toLocaleString('fa-IR');
 };
 
-const parseFormattedNumber = (value: string) => {
-  return parseInt(value.replace(/,/g, ''), 10) || 0;
+const parseInputValue = (value: string): number => {
+  return parseInt(value.replace(/,/g, '')) || 0;
+};
+
+const formatInputValue = (value: string): string => {
+  const numericValue = value.replace(/\D/g, '');
+  return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
+const toPersianNumber = (value: number): string => {
+  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  return value.toString().replace(/\d/g, (digit) => persianDigits[parseInt(digit)]);
 };
 
 const ConversionCalculator = () => {
-  const [sekehPrice, setSekehPrice] = useState<string>('');
-  const [goldPrice, setGoldPrice] = useState<string>('');
-  const [sekehCount, setSekehCount] = useState<string>('');
-  const [goldGrams, setGoldGrams] = useState<string>('');
+  // 4. State Management
+  const [inputs, setInputs] = useState<InputValues>({
+    sekehPrice: '',
+    goldPrice: '',
+    sekehCount: '',
+    goldGrams: ''
+  });
+  
   const [activeTab, setActiveTab] = useState<'sekeh' | 'gold'>('sekeh');
   const [purchaseHistory, setPurchaseHistory] = useState<PurchaseRecord[]>([]);
 
-  // Load purchase history from local storage on component mount
+  // 5. Data Persistence
   useEffect(() => {
     const savedHistory = localStorage.getItem(STORAGE_KEY);
     if (savedHistory) {
       try {
-        const parsedHistory = JSON.parse(savedHistory);
-        setPurchaseHistory(parsedHistory);
+        setPurchaseHistory(JSON.parse(savedHistory));
       } catch (error) {
-        console.error('Error loading purchase history:', error);
+        console.error('Error loading history:', error);
       }
     }
   }, []);
 
-  // Save purchase history to local storage whenever it changes
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(purchaseHistory));
   }, [purchaseHistory]);
 
-  const handlePriceChange = (value: string, setter: (value: string) => void) => {
-    const formatted = formatNumber(value);
-    setter(formatted);
+  // 6. Input Handlers
+  const handleInputChange = (field: keyof InputValues, value: string) => {
+    setInputs(prev => ({
+      ...prev,
+      [field]: formatInputValue(value)
+    }));
   };
 
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     e.target.value = '';
   };
 
-  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>, currentValue: string, setter: (value: string) => void) => {
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>, field: keyof InputValues) => {
     if (!e.target.value) {
-      setter(currentValue);
+      setInputs(prev => ({
+        ...prev,
+        [field]: prev[field]
+      }));
     }
   };
 
-  const calculateGoldGrams = () => {
-    const numSekehPrice = parseFormattedNumber(sekehPrice);
-    const numGoldPrice = parseFormattedNumber(goldPrice);
-    const numSekehCount = parseFloat(sekehCount);
+  // 7. Core Calculation Functions
+  const calculateGoldValue = (): CalculationResult | null => {
+    const sekehPrice = parseInputValue(inputs.sekehPrice);
+    const goldPrice = parseInputValue(inputs.goldPrice);
+    const sekehCount = parseFloat(inputs.sekehCount);
 
-    if (isNaN(numSekehPrice) || isNaN(numGoldPrice) || isNaN(numSekehCount)) {
-      return null;
-    }
+    if (!sekehPrice || !goldPrice || !sekehCount) return null;
 
-    const EIGHTEEN_KARAT_FACTOR = 4.3318;
-    const eighteenKaratPrice = numGoldPrice / EIGHTEEN_KARAT_FACTOR;
-    const totalSekehValue = numSekehPrice * numSekehCount;
+    const eighteenKaratPrice = goldPrice / EIGHTEEN_KARAT_FACTOR;
+    const totalSekehValue = sekehPrice * sekehCount;
     const goldGrams = totalSekehValue / eighteenKaratPrice;
-
-    // Calculate profit/loss information
-    const SEKAH_WEIGHT = 8.133;
-    const SEKAH_KARAT = 900;
-    const TARGET_KARAT = 750;
+    
     const pureGoldWeight = (SEKAH_WEIGHT * SEKAH_KARAT) / 1000;
     const targetGoldWeight = (pureGoldWeight * 1000) / TARGET_KARAT;
     const goldValue = targetGoldWeight * eighteenKaratPrice;
-    const premium = numSekehPrice - goldValue;
+    const premium = sekehPrice - goldValue;
     const premiumPercentage = (premium / goldValue) * 100;
-    const goldGramsPerSekeh = numSekehPrice / eighteenKaratPrice;
 
     return {
-      goldGrams,
-      totalSekehValue,
-      eighteenKaratPrice,
-      goldValue,
+      value: goldGrams,
       premium,
       premiumPercentage,
-      goldGramsPerSekeh,
-      targetGoldWeight
+      equivalent: totalSekehValue,
+      isProfitable: goldValue > totalSekehValue
     };
   };
 
-  const calculateSekehCount = () => {
-    const numSekehPrice = parseFormattedNumber(sekehPrice);
-    const numGoldPrice = parseFormattedNumber(goldPrice);
-    const numGoldGrams = parseFloat(goldGrams);
+  const calculateSekehValue = (): CalculationResult | null => {
+    const sekehPrice = parseInputValue(inputs.sekehPrice);
+    const goldPrice = parseInputValue(inputs.goldPrice);
+    const goldGrams = parseFloat(inputs.goldGrams);
 
-    if (isNaN(numSekehPrice) || isNaN(numGoldPrice) || isNaN(numGoldGrams)) {
-      return null;
-    }
+    if (!sekehPrice || !goldPrice || !goldGrams) return null;
 
-    const EIGHTEEN_KARAT_FACTOR = 4.3318;
-    const eighteenKaratPrice = numGoldPrice / EIGHTEEN_KARAT_FACTOR;
-    const totalGoldValue = eighteenKaratPrice * numGoldGrams;
-    const sekehCount = totalGoldValue / numSekehPrice;
-    const totalCoinValue = sekehCount * numSekehPrice;
-
-    const SEKAH_WEIGHT = 8.133;
-    const SEKAH_KARAT = 900;
-    const TARGET_KARAT = 750;
+    const eighteenKaratPrice = goldPrice / EIGHTEEN_KARAT_FACTOR;
+    const totalGoldValue = eighteenKaratPrice * goldGrams;
+    const sekehCount = totalGoldValue / sekehPrice;
     
     const pureGoldWeight = (SEKAH_WEIGHT * SEKAH_KARAT) / 1000;
     const targetGoldWeight = (pureGoldWeight * 1000) / TARGET_KARAT;
     const goldValuePerSekeh = targetGoldWeight * eighteenKaratPrice;
-    const premiumPerSekeh = numSekehPrice - goldValuePerSekeh;
-    const premiumPercentage = (premiumPerSekeh / goldValuePerSekeh) * 100;
+    const premium = sekehPrice - goldValuePerSekeh;
+    const premiumPercentage = (premium / goldValuePerSekeh) * 100;
 
     return {
-      sekehCount,
-      totalGoldValue: totalGoldValue,
-      totalCoinValue,
-      goldWeightPerSekeh: targetGoldWeight,
-      eighteenKaratPrice,
-      goldValuePerSekeh,
-      premiumPerSekeh,
-      premiumPercentage
-    };
-  };
-
-  const calculatePremium = () => {
-    const numSekehPrice = parseFormattedNumber(sekehPrice);
-    const numGoldPrice = parseFormattedNumber(goldPrice);
-    
-    if (isNaN(numSekehPrice) || isNaN(numGoldPrice)) {
-      return null;
-    }
-
-    const EIGHTEEN_KARAT_FACTOR = 4.3318;
-    const eighteenKaratPrice = numGoldPrice / EIGHTEEN_KARAT_FACTOR;
-
-    const SEKAH_WEIGHT = 8.133;
-    const SEKAH_KARAT = 900;
-    const TARGET_KARAT = 750;
-    
-    const pureGoldWeight = (SEKAH_WEIGHT * SEKAH_KARAT) / 1000;
-    const targetGoldWeight = (pureGoldWeight * 1000) / TARGET_KARAT;
-    
-    const goldValue = targetGoldWeight * eighteenKaratPrice;
-    const premium = numSekehPrice - goldValue;
-    const premiumPercentage = (premium / goldValue) * 100;
-    const goldGramsPerSekeh = numSekehPrice / eighteenKaratPrice;
-
-    return {
-      goldWeight: targetGoldWeight,
-      goldValue,
+      value: sekehCount,
       premium,
       premiumPercentage,
-      goldGramsPerSekeh,
-      eighteenKaratPrice
+      equivalent: totalGoldValue,
+      isProfitable: totalGoldValue > (sekehCount * sekehPrice)
     };
   };
 
+  // 8. Save Function with Validation
   const handleSavePurchase = () => {
+    const commonFields = {
+      id: Date.now().toString(),
+      date: new Date().toLocaleDateString('fa-IR'),
+    };
+
     if (activeTab === 'sekeh') {
-      const price = parseFormattedNumber(sekehPrice);
-      const count = parseFloat(sekehCount);
+      const sekehPrice = parseInputValue(inputs.sekehPrice);
+      const sekehCount = parseFloat(inputs.sekehCount);
+      const goldResult = calculateGoldValue();
       
-      if (!price || !count) return;
+      if (!sekehPrice || !sekehCount || !goldResult) return;
 
       const newRecord: PurchaseRecord = {
-        date: new Date().toLocaleDateString('fa-IR'),
-        price,
-        count,
-        totalValue: price * count,
-        type: 'coin'
+        ...commonFields,
+        price: sekehPrice,
+        count: sekehCount,
+        totalValue: sekehPrice * sekehCount,
+        type: 'coin',
+        premium: goldResult.premium,
+        premiumPercentage: goldResult.premiumPercentage,
+        goldGrams: goldResult.value
       };
 
-      setPurchaseHistory(prevHistory => [...prevHistory, newRecord]);
+      setPurchaseHistory(prev => [...prev, newRecord]);
     } else {
-      const price = parseFormattedNumber(goldPrice);
-      const grams = parseFloat(goldGrams);
-      const sekehPriceNum = parseFormattedNumber(sekehPrice);
-      
-      if (!price || !grams || !sekehPriceNum || !sekehResult) return;
+      const goldPrice = parseInputValue(inputs.goldPrice);
+      const goldGrams = parseFloat(inputs.goldGrams);
+      const sekehResult = calculateSekehValue();
+
+      if (!goldPrice || !goldGrams || !sekehResult) return;
 
       const newRecord: PurchaseRecord = {
-        date: new Date().toLocaleDateString('fa-IR'),
-        price,
-        count: grams,
-        totalValue: sekehResult.totalGoldValue,
+        ...commonFields,
+        price: goldPrice,
+        count: goldGrams,
+        totalValue: goldPrice * goldGrams,
         type: 'gold',
-        goldGrams: grams,
-        equivalentCoins: sekehResult.sekehCount
+        premium: sekehResult.premium,
+        premiumPercentage: sekehResult.premiumPercentage,
+        equivalentCoins: sekehResult.value
       };
 
-      setPurchaseHistory(prevHistory => [...prevHistory, newRecord]);
+      setPurchaseHistory(prev => [...prev, newRecord]);
     }
   };
 
-  // Add delete functionality
-  const handleDeleteRecord = (index: number) => {
-    setPurchaseHistory(prevHistory => prevHistory.filter((_, i) => i !== index));
+  // 9. Delete Function
+  const handleDeleteRecord = (id: string) => {
+    setPurchaseHistory(prev => prev.filter(record => record.id !== id));
   };
 
-  const result = calculateGoldGrams();
-  const sekehResult = calculateSekehCount();
-  const premiumInfo = calculatePremium();
-  const totalValue = result !== null ? parseFormattedNumber(sekehPrice) * parseFloat(sekehCount) : 0;
-  const totalGoldValue = sekehResult !== null ? sekehResult.totalGoldValue : 0;
+  // 10. Current Calculations
+  const goldResult = calculateGoldValue();
+  const sekehResult = calculateSekehValue();
+
+  const formatNumber = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    return numbers.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  const parseFormattedNumber = (value: string) => {
+    return parseInt(value.replace(/,/g, ''), 10) || 0;
+  };
+
+  const result = goldResult;
+  const totalValue = result !== null ? parseFormattedNumber(inputs.sekehPrice) * parseFloat(inputs.sekehCount) : 0;
+  const totalGoldValue = sekehResult !== null ? sekehResult.equivalent : 0;
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6">
-        {/* Coin Purchase History - Right Side */}
-        <div className="xl:col-span-4 order-2 xl:order-1">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6">
+            {/* Coin Purchase History - Right Side */}
+            <div className="xl:col-span-4 order-2 xl:order-1">
           <div className="bg-[#1A1A1A] rounded-2xl shadow-xl p-3 sm:p-4 border border-[#333333] h-full">
             <h3 className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mb-3 sm:mb-4">
-              تاریخچه تبدیل به سکه
-            </h3>
+                  تاریخچه تبدیل به سکه
+                </h3>
             <div className="space-y-3 sm:space-y-4 max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-200px)] overflow-y-auto scrollbar-thin scrollbar-thumb-[#333333]">
-              {purchaseHistory
-                .filter(record => record.type === 'coin')
+                      {purchaseHistory
+                        .filter(record => record.type === 'coin')
                 .map((record, index) => {
                   const totalValue = record.price * record.count;
-                  const goldValue = record.goldGrams ? record.goldGrams * (parseFormattedNumber(goldPrice) / 4.3318) : 0;
+                  const goldValue = record.goldGrams ? record.goldGrams * (parseFormattedNumber(inputs.goldPrice) / 4.3318) : 0;
                   const premium = totalValue - goldValue;
                   const premiumPercentage = (premium / goldValue) * 100;
                   const isProfitable = goldValue > totalValue;
@@ -242,8 +252,8 @@ const ConversionCalculator = () => {
                     <div key={index} className="bg-[#121212] rounded-xl p-3 sm:p-4 border border-[#333333]">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">{record.date}</span>
-                        <button
-                          onClick={() => handleDeleteRecord(index)}
+                              <button
+                          onClick={() => handleDeleteRecord(record.id)}
                           className="w-6 h-6 flex items-center justify-center rounded-full bg-[#D4AF37] hover:bg-[#FFD700] text-[#f5f5f5] transition-all duration-200"
                           aria-label="حذف"
                         >
@@ -261,7 +271,7 @@ const ConversionCalculator = () => {
                               d="M6 18L18 6M6 6l12 12"
                             />
                           </svg>
-                        </button>
+                              </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2 sm:gap-3">
                         <div className="space-y-1">
@@ -296,25 +306,25 @@ const ConversionCalculator = () => {
                     </div>
                   );
                 })}
-              {!purchaseHistory.some(record => record.type === 'coin') && (
+                      {!purchaseHistory.some(record => record.type === 'coin') && (
                 <div className="text-center py-8 text-[#A1A1AA]">
-                  تاریخچه تبدیل به سکه موجود نیست
+                            تاریخچه تبدیل به سکه موجود نیست
                 </div>
               )}
             </div>
           </div>
-        </div>
+            </div>
 
-        {/* Calculator Section */}
-        <div className="xl:col-span-4 order-1 xl:order-2">
+            {/* Calculator Section */}
+            <div className="xl:col-span-4 order-1 xl:order-2">
           <div className="bg-[#1A1A1A] rounded-2xl shadow-xl p-4 sm:p-6 border border-[#333333] h-full">
-            {/* Tabs */}
+                {/* Tabs */}
             <div className="relative flex justify-center gap-4 sm:gap-6 md:gap-10 border-b border-[#333333] pb-3 sm:pb-4 md:pb-6">
               {/* Coin-to-Gold Tab */}
-              <button
-                onClick={() => setActiveTab('sekeh')}
+                  <button
+                    onClick={() => setActiveTab('sekeh')}
                 className={`group relative px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 rounded-xl transition-all duration-200 flex items-center gap-1.5 sm:gap-2 ${
-                  activeTab === 'sekeh'
+                      activeTab === 'sekeh'
                     ? 'bg-gradient-to-br from-[#D4AF37] to-[#FFD700] text-[#121212] shadow-lg shadow-[#D4AF37]/20 hover:shadow-[#D4AF37]/30'
                     : 'text-[#A1A1AA] hover:text-[#FFD700] bg-[#1A1A1A]/50 hover:bg-[#1A1A1A]/60'
                 }`}
@@ -356,13 +366,13 @@ const ConversionCalculator = () => {
                     ? 'bg-[#FFD700] scale-100' 
                     : 'bg-transparent scale-0'
                 }`}></span>
-              </button>
+                  </button>
 
               {/* Gold-to-Coin Tab */}
-              <button
-                onClick={() => setActiveTab('gold')}
+                  <button
+                    onClick={() => setActiveTab('gold')}
                 className={`group relative px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 rounded-xl transition-all duration-200 flex items-center gap-1.5 sm:gap-2 ${
-                  activeTab === 'gold'
+                      activeTab === 'gold'
                     ? 'bg-gradient-to-br from-[#D4AF37] to-[#FFD700] text-[#121212] shadow-lg shadow-[#D4AF37]/20 hover:shadow-[#D4AF37]/30'
                     : 'text-[#A1A1AA] hover:text-[#FFD700] bg-[#1A1A1A]/50 hover:bg-[#1A1A1A]/60'
                 }`}
@@ -404,25 +414,25 @@ const ConversionCalculator = () => {
                     ? 'bg-[#FFD700] scale-100' 
                     : 'bg-transparent scale-0'
                 }`}></span>
-              </button>
-            </div>
+                  </button>
+                </div>
 
-            {/* Input Fields */}
+                {/* Input Fields */}
             <div className="space-y-3 sm:space-y-4 md:space-y-6 mt-3 sm:mt-4 md:mt-6">
-              {activeTab === 'sekeh' ? (
-                <>
+          {activeTab === 'sekeh' ? (
+            <>
                   <div className="space-y-3 sm:space-y-4 md:space-y-6">
-                    <div>
+                        <div>
                       <label className="block text-[clamp(12px,0.9vw,14px)] font-medium text-[#A1A1AA] mb-1.5 sm:mb-2">
                             قیمت فروش سکه امامی
                           </label>
                           <div className="relative flex items-center">
                             <input
                               type="text"
-                              value={sekehPrice}
-                              onChange={(e) => handlePriceChange(e.target.value, setSekehPrice)}
+                              value={inputs.sekehPrice}
+                              onChange={(e) => handleInputChange('sekehPrice', e.target.value)}
                               onFocus={handleInputFocus}
-                              onBlur={(e) => handleInputBlur(e, sekehPrice, setSekehPrice)}
+                              onBlur={(e) => handleInputBlur(e, 'sekehPrice')}
                               className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-[#333333] bg-[#1E1E1E] text-[#f5f5f5] focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all duration-200 text-right pl-16 sm:pl-20 text-[clamp(14px,1vw,16px)] font-medium min-h-[44px] sm:min-h-[48px]"
                               placeholder="۳۰,۰۰۰,۰۰۰"
                             />
@@ -438,11 +448,11 @@ const ConversionCalculator = () => {
                           </label>
                           <div className="relative flex items-center">
                             <input
-                              type="text"
-                              value={goldPrice}
-                              onChange={(e) => handlePriceChange(e.target.value, setGoldPrice)}
+                type="text"
+                              value={inputs.goldPrice}
+                              onChange={(e) => handleInputChange('goldPrice', e.target.value)}
                               onFocus={handleInputFocus}
-                              onBlur={(e) => handleInputBlur(e, goldPrice, setGoldPrice)}
+                              onBlur={(e) => handleInputBlur(e, 'goldPrice')}
                               className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-[#333333] bg-[#1E1E1E] text-[#f5f5f5] focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all duration-200 text-right pl-16 sm:pl-20 text-[clamp(14px,1vw,16px)] font-medium min-h-[44px] sm:min-h-[48px]"
                               placeholder="۲,۵۰۰,۰۰۰"
                             />
@@ -459,10 +469,10 @@ const ConversionCalculator = () => {
                           <div className="relative flex items-center">
                             <input
                               type="number"
-                              value={sekehCount}
-                              onChange={(e) => setSekehCount(e.target.value)}
+                              value={inputs.sekehCount}
+                              onChange={(e) => handleInputChange('sekehCount', e.target.value)}
                               onFocus={handleInputFocus}
-                              onBlur={(e) => handleInputBlur(e, sekehCount, setSekehCount)}
+                              onBlur={(e) => handleInputBlur(e, 'sekehCount')}
                               className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-[#333333] bg-[#1E1E1E] text-[#f5f5f5] focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all duration-200 text-right pl-12 sm:pl-16 text-[clamp(14px,1vw,16px)] font-medium min-h-[44px] sm:min-h-[48px]"
                               placeholder="۱۰"
                             />
@@ -474,20 +484,14 @@ const ConversionCalculator = () => {
                       </div>
 
                       {/* Results for Coin to Gold conversion */}
-                      {result !== null && (
+                      {result && (
                         <div className="mt-4 sm:mt-8 p-4 sm:p-6 bg-[#1A1A1A] rounded-xl space-y-4 sm:space-y-6 border border-[#333333]">
                           {/* Conversion Summary */}
                           <div className="grid grid-cols-2 gap-3 sm:gap-6">
                             <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
                               <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">معادل طلای ۱۸ عیار</p>
-                              <p className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mt-1 sm:mt-2 ltr">
-                                {result.goldGrams.toFixed(2)} گرم
-                              </p>
-                            </div>
-                            <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
-                              <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">وزن طلای ۱۸ عیار هر سکه</p>
-                              <p className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mt-1 sm:mt-2 ltr">
-                                {result.goldGramsPerSekeh.toFixed(3)} گرم
+                              <p className="text-[clamp(14px,1vw,16px)] font-medium text-[#FFD700] mt-1 sm:mt-2">
+                                {toPersianNumber(Number(result.value.toFixed(2)))} گرم
                               </p>
                             </div>
                           </div>
@@ -497,13 +501,13 @@ const ConversionCalculator = () => {
                             <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
                               <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">ارزش سکه‌های شما</p>
                               <p className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mt-1 sm:mt-2 ltr">
-                                {formatNumber(result.totalSekehValue.toFixed(0))} تومان
+                                {formatCurrency(result.equivalent || 0)} تومان
                               </p>
                             </div>
                             <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
                               <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">ارزش معادل طلا</p>
                               <p className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mt-1 sm:mt-2 ltr">
-                                {formatNumber(result.goldValue.toFixed(0))} تومان
+                                {formatCurrency(result.value * parseInputValue(inputs.goldPrice))} تومان
                               </p>
                             </div>
                           </div>
@@ -513,13 +517,13 @@ const ConversionCalculator = () => {
                             <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
                               <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">ارزش طلای خالص هر سکه</p>
                               <p className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mt-1 sm:mt-2 ltr">
-                                {formatNumber(result.goldValue.toFixed(0))} تومان
+                                {formatCurrency(result.value * parseInputValue(inputs.goldPrice))} تومان
                               </p>
                             </div>
                             <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
-                              <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">حباب سکه</p>
-                              <p className={`text-[clamp(16px,1.2vw,20px)] font-bold ${result.premiumPercentage > 0 ? 'text-[#EF4444]' : 'text-[#10B981]'} mt-1 sm:mt-2 ltr`}>
-                                {Math.abs(result.premiumPercentage).toFixed(1)}٪ {result.premiumPercentage > 0 ? 'زیاد' : 'کم'}
+                              <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">درصد سود/زیان</p>
+                              <p className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mt-1 sm:mt-2 ltr">
+                                {result.premiumPercentage ? formatCurrency(result.premiumPercentage) : '0'}%
                               </p>
                             </div>
                           </div>
@@ -528,15 +532,15 @@ const ConversionCalculator = () => {
                           <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
                             <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA] mb-2">تحلیل سود و زیان</p>
                             <div className="flex flex-col items-center gap-2">
-                              <p className={`text-[clamp(14px,1vw,16px)] font-medium ${result.goldValue > result.totalSekehValue ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>
-                                {result.goldValue > result.totalSekehValue ? '✅' : '❌'} 
-                                تبدیل به طلا {result.goldValue > result.totalSekehValue ? 'سودده' : 'زیان‌ده'} است
+                              <p className={`text-[clamp(14px,1vw,16px)] font-medium ${result.value > (result.equivalent || 0) ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>
+                                {result.value > (result.equivalent || 0) ? '✅' : '❌'} 
+                                تبدیل به طلا {result.value > (result.equivalent || 0) ? 'سودده' : 'زیان‌ده'} است
                               </p>
                               <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">
-                                تفاوت: {formatNumber(Math.abs(result.goldValue - result.totalSekehValue).toFixed(0))} تومان
+                                تفاوت: {formatCurrency(Math.abs(result.value - (result.equivalent || 0)))} تومان
                               </p>
                               <p className="text-[clamp(11px,0.8vw,13px)] text-[#A1A1AA] mt-1">
-                                {result.goldValue > result.totalSekehValue 
+                                {result.value > (result.equivalent || 0) 
                                   ? 'تبدیل به طلا در این شرایط به صرفه است'
                                   : 'تبدیل به طلا در این شرایط به صرفه نیست'}
                               </p>
@@ -551,20 +555,20 @@ const ConversionCalculator = () => {
                           </button>
                         </div>
                       )}
-                </>
-              ) : (
+            </>
+          ) : (
                 <div className="space-y-3 sm:space-y-4 md:space-y-6">
-                  <div>
+                      <div>
                     <label className="block text-sm font-medium text-[#A1A1AA] mb-2">
                           قیمت خرید سکه امامی
                         </label>
                         <div className="relative flex items-center">
                           <input
                             type="text"
-                            value={sekehPrice}
-                            onChange={(e) => handlePriceChange(e.target.value, setSekehPrice)}
+                            value={inputs.sekehPrice}
+                            onChange={(e) => handleInputChange('sekehPrice', e.target.value)}
                             onFocus={handleInputFocus}
-                            onBlur={(e) => handleInputBlur(e, sekehPrice, setSekehPrice)}
+                            onBlur={(e) => handleInputBlur(e, 'sekehPrice')}
                             className="w-full px-4 py-3.5 rounded-xl border border-[#333333] bg-[#1E1E1E] text-[#f5f5f5] focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all duration-200 text-right pl-20 font-medium"
                             placeholder="۳۰,۰۰۰,۰۰۰"
                           />
@@ -576,18 +580,18 @@ const ConversionCalculator = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-[#A1A1AA] mb-2">
-                            مظنه
-                          </label>
-                          <div className="relative flex items-center">
-                            <input
-                              type="text"
-                              value={goldPrice}
-                              onChange={(e) => handlePriceChange(e.target.value, setGoldPrice)}
+                          مظنه
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                type="text"
+                              value={inputs.goldPrice}
+                              onChange={(e) => handleInputChange('goldPrice', e.target.value)}
                               onFocus={handleInputFocus}
-                              onBlur={(e) => handleInputBlur(e, goldPrice, setGoldPrice)}
+                              onBlur={(e) => handleInputBlur(e, 'goldPrice')}
                               className="w-full px-4 py-3.5 rounded-xl border border-[#333333] bg-[#1E1E1E] text-[#f5f5f5] focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all duration-200 text-right pl-20 font-medium"
-                              placeholder="۲,۵۰۰,۰۰۰"
-                            />
+                            placeholder="۲,۵۰۰,۰۰۰"
+                          />
                         <span className="absolute left-0 top-0 bottom-0 px-4 flex items-center justify-center text-[#A1A1AA] text-sm font-medium bg-[#1A1A1A] border-r border-[#333333] rounded-l-xl">
                             تومان
                           </span>
@@ -596,18 +600,18 @@ const ConversionCalculator = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-[#A1A1AA] mb-2">
-                            مقدار طلا
-                          </label>
-                          <div className="relative flex items-center">
-                            <input
-                              type="number"
-                              value={goldGrams}
-                              onChange={(e) => setGoldGrams(e.target.value)}
+                          مقدار طلا
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                            type="number"
+                              value={inputs.goldGrams}
+                              onChange={(e) => handleInputChange('goldGrams', e.target.value)}
                               onFocus={handleInputFocus}
-                              onBlur={(e) => handleInputBlur(e, goldGrams, setGoldGrams)}
+                              onBlur={(e) => handleInputBlur(e, 'goldGrams')}
                               className="w-full px-4 py-3.5 rounded-xl border border-[#333333] bg-[#1E1E1E] text-[#f5f5f5] focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition-all duration-200 text-right pl-16 font-medium"
-                              placeholder="۱۰۰"
-                            />
+                            placeholder="۱۰۰"
+                          />
                         <span className="absolute left-0 top-0 bottom-0 px-4 flex items-center justify-center text-[#A1A1AA] text-sm font-medium bg-[#1A1A1A] border-r border-[#333333] rounded-l-xl">
                             گرم
                           </span>
@@ -615,20 +619,14 @@ const ConversionCalculator = () => {
                       </div>
 
                       {/* Results for Gold to Coin conversion */}
-                      {sekehResult !== null && (
+                      {sekehResult && (
                         <div className="mt-4 sm:mt-8 p-4 sm:p-6 bg-[#1A1A1A] rounded-xl space-y-4 sm:space-y-6 border border-[#333333]">
                           {/* Conversion Summary */}
                           <div className="grid grid-cols-2 gap-3 sm:gap-6">
                             <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
                               <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">معادل سکه</p>
-                              <p className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mt-1 sm:mt-2 ltr">
-                                {sekehResult.sekehCount.toFixed(2)} عدد
-                              </p>
-                            </div>
-                            <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
-                              <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">وزن طلای ۱۸ عیار هر سکه</p>
-                              <p className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mt-1 sm:mt-2 ltr">
-                                {sekehResult.goldWeightPerSekeh.toFixed(3)} گرم
+                              <p className="text-[clamp(14px,1vw,16px)] font-medium text-[#FFD700] mt-1 sm:mt-2">
+                                {toPersianNumber(Number(sekehResult.value.toFixed(2)))} عدد
                               </p>
                             </div>
                           </div>
@@ -637,14 +635,14 @@ const ConversionCalculator = () => {
                           <div className="grid grid-cols-2 gap-3 sm:gap-6">
                             <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
                               <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">ارزش طلای شما</p>
-                              <p className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mt-1 sm:mt-2 ltr">
-                                {formatNumber(sekehResult.totalGoldValue.toFixed(0))} تومان
+                              <p className="text-[clamp(14px,1vw,16px)] font-medium text-[#FFD700] mt-1 sm:mt-2 ltr">
+                                {formatCurrency(Math.floor(sekehResult.equivalent || 0))} تومان
                               </p>
                             </div>
                             <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
                               <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">ارزش معادل سکه</p>
-                              <p className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mt-1 sm:mt-2 ltr">
-                                {formatNumber(sekehResult.totalCoinValue.toFixed(0))} تومان
+                              <p className="text-[clamp(14px,1vw,16px)] font-medium text-[#FFD700] mt-1 sm:mt-2 ltr">
+                                {formatCurrency(Math.floor(sekehResult.value * parseInputValue(inputs.sekehPrice)))} تومان
                               </p>
                             </div>
                           </div>
@@ -653,14 +651,14 @@ const ConversionCalculator = () => {
                           <div className="grid grid-cols-2 gap-3 sm:gap-6">
                             <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
                               <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">ارزش طلای خالص هر سکه</p>
-                              <p className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mt-1 sm:mt-2 ltr">
-                                {formatNumber(sekehResult.goldValuePerSekeh.toFixed(0))} تومان
+                              <p className="text-[clamp(14px,1vw,16px)] font-medium text-[#FFD700] mt-1 sm:mt-2 ltr">
+                                {formatCurrency(Math.floor(sekehResult.value * parseInputValue(inputs.sekehPrice)))} تومان
                               </p>
                             </div>
                             <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
-                              <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">حباب سکه</p>
-                              <p className={`text-[clamp(16px,1.2vw,20px)] font-bold ${sekehResult.premiumPercentage > 0 ? 'text-[#EF4444]' : 'text-[#10B981]'} mt-1 sm:mt-2 ltr`}>
-                                {Math.abs(sekehResult.premiumPercentage).toFixed(1)}٪ {sekehResult.premiumPercentage > 0 ? 'زیاد' : 'کم'}
+                              <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">درصد سود/زیان</p>
+                              <p className="text-[clamp(14px,1vw,16px)] font-medium text-[#FFD700] mt-1 sm:mt-2 ltr">
+                                {sekehResult.premiumPercentage ? formatCurrency(sekehResult.premiumPercentage) : '0'}%
                               </p>
                             </div>
                           </div>
@@ -669,15 +667,15 @@ const ConversionCalculator = () => {
                           <div className="text-center p-2.5 sm:p-4 bg-[#121212] rounded-xl shadow-sm border border-[#333333]">
                             <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA] mb-2">تحلیل سود و زیان</p>
                             <div className="flex flex-col items-center gap-2">
-                              <p className={`text-[clamp(14px,1vw,16px)] font-medium ${sekehResult.totalCoinValue > sekehResult.totalGoldValue ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>
-                                {sekehResult.totalCoinValue > sekehResult.totalGoldValue ? '✅' : '❌'} 
+                              <p className={`text-[clamp(14px,1vw,16px)] font-medium ${sekehResult.value > (sekehResult.equivalent || 0) ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>
+                                {sekehResult.value > (sekehResult.equivalent || 0) ? '✅' : '❌'} 
                                 تبدیل به سکه در این شرایط به صرفه است
                               </p>
                               <p className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">
-                                تفاوت: {formatNumber(Math.abs(sekehResult.totalCoinValue - sekehResult.totalGoldValue).toFixed(0))} تومان
+                                تفاوت: {formatCurrency(Math.abs(sekehResult.value - (sekehResult.equivalent || 0)))} تومان
                               </p>
                               <p className="text-[clamp(11px,0.8vw,13px)] text-[#A1A1AA] mt-1">
-                                {sekehResult.totalCoinValue > sekehResult.totalGoldValue 
+                                {sekehResult.value > (sekehResult.equivalent || 0) 
                                   ? 'تبدیل به سکه در این شرایط به صرفه است'
                                   : 'تبدیل به سکه در این شرایط به صرفه نیست'}
                               </p>
@@ -692,24 +690,24 @@ const ConversionCalculator = () => {
                           </button>
                         </div>
                       )}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Gold Purchase History - Left Side */}
-        <div className="xl:col-span-4 order-3">
+            {/* Gold Purchase History - Left Side */}
+            <div className="xl:col-span-4 order-3">
           <div className="bg-[#1A1A1A] rounded-2xl shadow-xl p-3 sm:p-4 border border-[#333333] h-full">
             <h3 className="text-[clamp(16px,1.2vw,20px)] font-bold text-[#FFD700] mb-3 sm:mb-4">
-              تاریخچه تبدیل به طلا
-            </h3>
+                  تاریخچه تبدیل به طلا
+                </h3>
             <div className="space-y-3 sm:space-y-4 max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-200px)] overflow-y-auto scrollbar-thin scrollbar-thumb-[#333333]">
-              {purchaseHistory
-                .filter(record => record.type === 'gold')
+                      {purchaseHistory
+                        .filter(record => record.type === 'gold')
                 .map((record, index) => {
                   const totalValue = record.price * record.count;
-                  const coinValue = record.equivalentCoins ? record.equivalentCoins * parseFormattedNumber(sekehPrice) : 0;
+                  const coinValue = record.equivalentCoins ? record.equivalentCoins * parseFormattedNumber(inputs.sekehPrice) : 0;
                   const premium = coinValue - totalValue;
                   const premiumPercentage = (premium / totalValue) * 100;
                   const isProfitable = coinValue > totalValue;
@@ -718,8 +716,8 @@ const ConversionCalculator = () => {
                     <div key={index} className="bg-[#121212] rounded-xl p-3 sm:p-4 border border-[#333333]">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-[clamp(12px,0.9vw,14px)] text-[#A1A1AA]">{record.date}</span>
-                        <button
-                          onClick={() => handleDeleteRecord(index)}
+                              <button
+                          onClick={() => handleDeleteRecord(record.id)}
                           className="w-6 h-6 flex items-center justify-center rounded-full bg-[#D4AF37] hover:bg-[#FFD700] text-[#f5f5f5] transition-all duration-200"
                           aria-label="حذف"
                         >
@@ -737,7 +735,7 @@ const ConversionCalculator = () => {
                               d="M6 18L18 6M6 6l12 12"
                             />
                           </svg>
-                        </button>
+                              </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2 sm:gap-3">
                         <div className="space-y-1">
@@ -772,9 +770,9 @@ const ConversionCalculator = () => {
                     </div>
                   );
                 })}
-              {!purchaseHistory.some(record => record.type === 'gold') && (
+                      {!purchaseHistory.some(record => record.type === 'gold') && (
                 <div className="text-center py-8 text-[#A1A1AA]">
-                  تاریخچه تبدیل به طلا موجود نیست
+                            تاریخچه تبدیل به طلا موجود نیست
                 </div>
               )}
             </div>
