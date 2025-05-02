@@ -226,8 +226,6 @@ const ConversionCalculator = () => {
   };
 
   const result = goldResult;
-  const totalValue = result !== null ? parseFormattedNumber(inputs.sekehPrice) * parseFloat(inputs.sekehCount) : 0;
-  const totalGoldValue = sekehResult !== null ? sekehResult.equivalent : 0;
 
   return (
     <div className="w-full">
